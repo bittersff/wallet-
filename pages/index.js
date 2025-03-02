@@ -15,10 +15,26 @@ export default function Home() {
     setTheme(theme === 'dark' ? 'light' : 'dark');
   };
 
-  // Update body class when theme changes
+  // Update theme class on body
   useEffect(() => {
-    document.body.className = theme;
+    if (typeof document !== 'undefined') {
+      document.body.className = theme;
+    }
   }, [theme]);
+
+  // Get the right style class based on theme
+  const getCardClassName = () => {
+    return `${styles.card} ${theme === 'dark' ? styles.darkCard : ''}`;
+  };
+
+  const getNetworkButtonClassName = (network) => {
+    const baseClass = `${styles.networkButton} ${activeNetwork === network ? styles.active : ''}`;
+    return `${baseClass} ${theme === 'dark' && activeNetwork !== network ? styles.darkNetworkButton : ''}`;
+  };
+
+  const getThemeButtonClassName = () => {
+    return `${styles.themeButton} ${theme === 'dark' ? styles.darkThemeButton : ''}`;
+  };
 
   return (
     <div className={styles.container}>
@@ -38,7 +54,7 @@ export default function Home() {
         </p>
 
         <div className={styles.themeToggle}>
-          <button onClick={toggleTheme} className={styles.themeButton}>
+          <button onClick={toggleTheme} className={getThemeButtonClassName()}>
             {theme === 'dark' ? '☀️ Light Mode' : '🌙 Dark Mode'}
           </button>
         </div>
@@ -46,28 +62,28 @@ export default function Home() {
         <div className={styles.networkSelector}>
           <button 
             onClick={() => setActiveNetwork('ethereum')}
-            className={`${styles.networkButton} ${activeNetwork === 'ethereum' ? styles.active : ''}`}
+            className={getNetworkButtonClassName('ethereum')}
           >
             Ethereum
           </button>
           <button 
             onClick={() => setActiveNetwork('bnb')}
-            className={`${styles.networkButton} ${activeNetwork === 'bnb' ? styles.active : ''}`}
+            className={getNetworkButtonClassName('bnb')}
           >
             BNB Chain
           </button>
           <button 
             onClick={() => setActiveNetwork('solana')}
-            className={`${styles.networkButton} ${activeNetwork === 'solana' ? styles.active : ''}`}
+            className={getNetworkButtonClassName('solana')}
           >
             Solana
           </button>
         </div>
 
-        <div className={styles.card}>
-          {activeNetwork === 'ethereum' && <EthereumWalletEmptier />}
-          {activeNetwork === 'bnb' && <BnbWalletEmptier />}
-          {activeNetwork === 'solana' && <SolanaWalletEmptier />}
+        <div className={getCardClassName()}>
+          {activeNetwork === 'ethereum' && <EthereumWalletEmptier theme={theme} />}
+          {activeNetwork === 'bnb' && <BnbWalletEmptier theme={theme} />}
+          {activeNetwork === 'solana' && <SolanaWalletEmptier theme={theme} />}
         </div>
       </main>
 
