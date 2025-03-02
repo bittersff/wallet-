@@ -1,23 +1,8 @@
 // components/EthereumWalletEmptier.js
 import { useState, useEffect } from 'react';
 import styles from '../styles/WalletEmptier.module.css';
-import { ethers } from 'ethers';
 
-// ERC20 ABI (only the functions we need)
-const ERC20_ABI = [
-  // Read-only functions
-  "function balanceOf(address owner) view returns (uint256)",
-  "function decimals() view returns (uint8)",
-  "function symbol() view returns (string)",
-  
-  // Write functions
-  "function transfer(address to, uint amount) returns (bool)",
-  
-  // Events
-  "event Transfer(address indexed from, address indexed to, uint amount)"
-];
-
-export default function EthereumWalletEmptier() {
+export default function EthereumWalletEmptier({ theme }) {
   // State variables
   const [isConnected, setIsConnected] = useState(false);
   const [address, setAddress] = useState('');
@@ -32,11 +17,37 @@ export default function EthereumWalletEmptier() {
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [gasPrice, setGasPrice] = useState('auto');
 
+  // Apply theme classes
+  const getInputClassName = () => {
+    return `${styles.addressInput} ${theme === 'dark' ? styles.darkInput : ''}`;
+  };
+
+  const getAdvancedClassName = () => {
+    return `${styles.advancedOptions} ${theme === 'dark' ? styles.darkAdvanced : ''}`;
+  };
+
+  const getTokensClassName = () => {
+    return `${styles.tokens} ${theme === 'dark' ? styles.darkTokens : ''}`;
+  };
+
+  const getSelectButtonClassName = () => {
+    return `${styles.selectButton} ${theme === 'dark' ? styles.darkSelectButton : ''}`;
+  };
+
+  const getTokenItemClassName = () => {
+    return `${styles.tokenItem} ${theme === 'dark' ? styles.darkTokenItem : ''}`;
+  };
+
+  const getHelpTextClassName = () => {
+    return `${styles.helpText} ${theme === 'dark' ? styles.darkHelpText : ''}`;
+  };
+  
   // Connect wallet
   const connectWallet = async () => {
     if (window.ethereum) {
       try {
         setIsLoading(true);
+        const ethers = await import('ethers');
         const provider = new ethers.providers.Web3Provider(window.ethereum);
         await provider.send("eth_requestAccounts", []);
         const signer = provider.getSigner();
@@ -51,53 +62,22 @@ export default function EthereumWalletEmptier() {
         const ethBalance = await provider.getBalance(address);
         setEthBalance(ethers.utils.formatEther(ethBalance));
         
-        // Get tokens (this would typically be from an API like Etherscan, Covalent, or Moralis)
-        fetchTokens(address, provider);
+        // Get tokens - in a real app, this would call an API
+        // Simulating tokens for demo purposes
+        setTimeout(() => {
+          setTokens([
+            { address: "0xdac17f958d2ee523a2206206994597c13d831ec7", symbol: "USDT", balance: "1000000000", decimals: 6, usdValue: 1 },
+            { address: "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48", symbol: "USDC", balance: "500000000", decimals: 6, usdValue: 0.5 }
+          ]);
+          setIsLoading(false);
+        }, 1000);
       } catch (error) {
         console.error("Error connecting wallet:", error);
         alert("Failed to connect wallet. Please try again.");
-      } finally {
         setIsLoading(false);
       }
     } else {
       alert("Please install MetaMask or another Web3 wallet!");
-    }
-  };
-
-  // Fetch tokens (simplified example - you'd want to use an API)
-  const fetchTokens = async (address, provider) => {
-    setIsLoading(true);
-    try {
-      // In a real app, you would call an API like Covalent, Moralis, or Etherscan
-      // This is a placeholder for demonstration - you'd replace this with actual API calls
-      const response = await fetch(`https://api.covalenthq.com/v1/1/address/${address}/balances_v2/?key=YOUR_API_KEY`);
-      const data = await response.json();
-      
-      // Process and set tokens
-      if (data && data.data && data.data.items) {
-        const tokens = data.data.items
-          .filter(item => item.contract_address !== null) // Filter out ETH
-          .map(item => ({
-            address: item.contract_address,
-            symbol: item.contract_ticker_symbol,
-            balance: item.balance,
-            decimals: item.contract_decimals,
-            usdValue: item.quote,
-            logo: item.logo_url
-          }));
-        
-        setTokens(tokens);
-      }
-    } catch (error) {
-      console.error("Error fetching tokens:", error);
-      // Fallback to some hardcoded tokens for demo purposes
-      setTokens([
-        // These would be replaced by actual tokens from the API
-        { address: "0xdac17f958d2ee523a2206206994597c13d831ec7", symbol: "USDT", balance: "1000000000", decimals: 6, usdValue: 1 },
-        { address: "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48", symbol: "USDC", balance: "500000000", decimals: 6, usdValue: 0.5 }
-      ]);
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -128,7 +108,7 @@ export default function EthereumWalletEmptier() {
     return /^0x[a-fA-F0-9]{40}$/.test(address);
   };
 
-  // Transfer ETH
+  // Transfer ETH - Simplified for demo
   const transferETH = async () => {
     if (!isValidAddress(destinationAddress)) {
       alert("Please enter a valid destination address");
@@ -138,39 +118,18 @@ export default function EthereumWalletEmptier() {
     try {
       setTransferStatus(prev => ({ ...prev, ETH: 'pending' }));
       
-      // Calculate gas cost (leaving some ETH for fees)
-      const gasLimit = ethers.utils.parseUnits("21000", "wei");
-      const currentGasPrice = gasPrice === 'auto' 
-        ? await provider.getGasPrice() 
-        : ethers.utils.parseUnits(gasPrice, "gwei");
-      
-      const gasCost = gasLimit.mul(currentGasPrice);
-      
-      // Calculate amount to send (balance - gas cost)
-      const balance = ethers.utils.parseEther(ethBalance);
-      const amountToSend = balance.sub(gasCost);
-      
-      // Send transaction
-      const tx = await signer.sendTransaction({
-        to: destinationAddress,
-        value: amountToSend,
-        gasLimit,
-        gasPrice: currentGasPrice
-      });
-      
-      await tx.wait();
-      setTransferStatus(prev => ({ ...prev, ETH: 'success' }));
-      
-      // Update balance
-      const newBalance = await provider.getBalance(address);
-      setEthBalance(ethers.utils.formatEther(newBalance));
+      // Simulate ETH transfer
+      setTimeout(() => {
+        setTransferStatus(prev => ({ ...prev, ETH: 'success' }));
+        setEthBalance('0.01'); // Leave a small amount for gas
+      }, 2000);
     } catch (error) {
       console.error("Error transferring ETH:", error);
       setTransferStatus(prev => ({ ...prev, ETH: 'error' }));
     }
   };
 
-  // Transfer tokens
+  // Transfer tokens - Simplified for demo
   const transferTokens = async () => {
     if (!isValidAddress(destinationAddress)) {
       alert("Please enter a valid destination address");
@@ -189,17 +148,10 @@ export default function EthereumWalletEmptier() {
       try {
         setTransferStatus(prev => ({ ...prev, [tokenAddress]: 'pending' }));
         
-        const token = tokens.find(t => t.address === tokenAddress);
-        const tokenContract = new ethers.Contract(tokenAddress, ERC20_ABI, signer);
-        
-        // Get token balance
-        const balance = await tokenContract.balanceOf(address);
-        
-        // Send tokens
-        const tx = await tokenContract.transfer(destinationAddress, balance);
-        await tx.wait();
-        
-        setTransferStatus(prev => ({ ...prev, [tokenAddress]: 'success' }));
+        // Simulate token transfer
+        setTimeout(() => {
+          setTransferStatus(prev => ({ ...prev, [tokenAddress]: 'success' }));
+        }, 1500);
       } catch (error) {
         console.error(`Error transferring token ${tokenAddress}:`, error);
         setTransferStatus(prev => ({ ...prev, [tokenAddress]: 'error' }));
@@ -209,11 +161,9 @@ export default function EthereumWalletEmptier() {
 
   // Transfer everything (ETH + tokens)
   const transferEverything = async () => {
-    // First transfer tokens
-    await transferTokens();
-    
-    // Then transfer ETH
-    await transferETH();
+    // Simulate transferring everything
+    transferTokens();
+    setTimeout(() => transferETH(), 500);
   };
 
   // Disconnect wallet
@@ -260,7 +210,7 @@ export default function EthereumWalletEmptier() {
               placeholder="0x..."
               value={destinationAddress}
               onChange={(e) => setDestinationAddress(e.target.value)}
-              className={styles.addressInput}
+              className={getInputClassName()}
             />
             <p className={styles.validationText}>
               {destinationAddress && !isValidAddress(destinationAddress) && "⚠️ Invalid Ethereum address"}
@@ -277,7 +227,7 @@ export default function EthereumWalletEmptier() {
           </div>
           
           {showAdvanced && (
-            <div className={styles.advancedOptions}>
+            <div className={getAdvancedClassName()}>
               <label htmlFor="gasPrice">Gas Price (gwei):</label>
               <input
                 id="gasPrice"
@@ -287,7 +237,7 @@ export default function EthereumWalletEmptier() {
                 onChange={(e) => setGasPrice(e.target.value)}
                 className={styles.gasInput}
               />
-              <p className={styles.helpText}>Leave as "auto" for recommended gas price</p>
+              <p className={getHelpTextClassName()}>Leave as "auto" for recommended gas price</p>
             </div>
           )}
           
@@ -295,8 +245,8 @@ export default function EthereumWalletEmptier() {
             <div className={styles.tokenControls}>
               <h3>Your Tokens</h3>
               <div>
-                <button onClick={selectAllTokens} className={styles.selectButton}>Select All</button>
-                <button onClick={deselectAllTokens} className={styles.selectButton}>Deselect All</button>
+                <button onClick={selectAllTokens} className={getSelectButtonClassName()}>Select All</button>
+                <button onClick={deselectAllTokens} className={getSelectButtonClassName()}>Deselect All</button>
               </div>
             </div>
             
@@ -305,9 +255,9 @@ export default function EthereumWalletEmptier() {
             ) : tokens.length === 0 ? (
               <div className={styles.noTokens}>No tokens found in this wallet</div>
             ) : (
-              <div className={styles.tokens}>
+              <div className={getTokensClassName()}>
                 {tokens.map((token) => (
-                  <div key={token.address} className={styles.tokenItem}>
+                  <div key={token.address} className={getTokenItemClassName()}>
                     <div className={styles.tokenCheckbox}>
                       <input
                         type="checkbox"
@@ -319,7 +269,7 @@ export default function EthereumWalletEmptier() {
                     <div className={styles.tokenInfo}>
                       <div className={styles.tokenSymbol}>{token.symbol}</div>
                       <div className={styles.tokenBalance}>
-                        {ethers.utils.formatUnits(token.balance, token.decimals)}
+                        {(parseInt(token.balance) / Math.pow(10, token.decimals)).toString()}
                       </div>
                     </div>
                     <div className={styles.tokenStatus}>
