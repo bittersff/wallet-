@@ -282,35 +282,35 @@
   box-shadow: none;
 }
 
-/* Dark mode overrides */
-:global(body.dark) .addressInput {
-  --input-bg: #2d2d2d;
-  --input-color: #e4e4e4;
+/* Dark mode specific classes */
+.darkInput {
+  background-color: #2d2d2d;
+  color: #e4e4e4;
   border-color: #444;
 }
 
-:global(body.dark) .advancedOptions {
-  --advanced-bg: #2d2d2d;
+.darkAdvanced {
+  background-color: #2d2d2d;
 }
 
-:global(body.dark) .selectButton {
+.darkSelectButton {
   border-color: #444;
   color: #e4e4e4;
 }
 
-:global(body.dark) .selectButton:hover {
+.darkSelectButton:hover {
   background-color: #3d3d3d;
 }
 
-:global(body.dark) .tokens {
+.darkTokens {
   border-color: #444;
 }
 
-:global(body.dark) .tokenItem {
+.darkTokenItem {
   border-bottom-color: #444;
 }
 
-:global(body.dark) .helpText {
+.darkHelpText {
   color: #aaa;
 }
 
