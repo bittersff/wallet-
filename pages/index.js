@@ -1,10 +1,24 @@
 // pages/index.js
 import { useState, useEffect } from 'react';
 import Head from 'next/head';
+import dynamic from 'next/dynamic';
 import styles from '../styles/Home.module.css';
-import EthereumWalletEmptier from '../components/EthereumWalletEmptier';
-import SolanaWalletEmptier from '../components/SolanaWalletEmptier';
-import BnbWalletEmptier from '../components/BnbWalletEmptier';
+
+// Use dynamic imports to reduce initial bundle size
+const EthereumWalletEmptier = dynamic(() => import('../components/EthereumWalletEmptier'), {
+  loading: () => <div>Loading Ethereum wallet interface...</div>,
+  ssr: false // Disable server-side rendering for wallet components
+});
+
+const SolanaWalletEmptier = dynamic(() => import('../components/SolanaWalletEmptier'), {
+  loading: () => <div>Loading Solana wallet interface...</div>,
+  ssr: false
+});
+
+const BnbWalletEmptier = dynamic(() => import('../components/BnbWalletEmptier'), {
+  loading: () => <div>Loading BNB Chain wallet interface...</div>,
+  ssr: false
+});
 
 export default function Home() {
   const [activeNetwork, setActiveNetwork] = useState('ethereum');
